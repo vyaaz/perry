@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Home · Perry{% endblock %}
+
+{% block content %}
+  <div class="p-5 mb-4 bg-white border rounded-3">
+    <div class="container-fluid py-3">
+      <h1 class="display-6 fw-semibold mb-2">Welcome to Perry</h1>
+      <p class="text-muted mb-4">
+        This is the starter home page. Edit <code>templates/home.html</code> to add your site content.
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" href="/admin/">Open Admin</a>
+        <a class="btn btn-outline-secondary" href="{% url 'home' %}">Refresh</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5">Bootstrap layout</h2>
+          <p class="mb-0 text-muted">Navbar, container, footer, and responsive grid are ready.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5">Template blocks</h2>
+          <p class="mb-0 text-muted">Use <code>{% verbatim %}{% block content %}{% endblock %}{% endverbatim %}</code> to build pages.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h5">Next step</h2>
+          <p class="mb-0 text-muted">Add an app and move templates under <code>&lt;app&gt;/templates/</code> if you prefer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
