@@ -1,4 +1,3 @@
-{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -17,8 +16,8 @@
   </head>
   <body class="d-flex flex-column min-vh-100 bg-light">
     <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
-      <div class="container">
-        <a class="navbar-brand fw-semibold" href="{% url 'home' %}">Perry</a>
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-semibold" href="{% url 'dashboard' %}">Perry CRM</a>
         <button
           class="navbar-toggler"
           type="button"
@@ -34,11 +33,43 @@
         <div class="collapse navbar-collapse" id="navbarMain">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'home' %}">Home</a>
+              <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'customer_list' %}">Customers</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'job_list' %}">Jobs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'schedule_list' %}">Schedule</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'sales_list' %}">Sales</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'map' %}">Map</a>
             </li>
           </ul>
 
           <div class="d-flex gap-2">
+            {% if user.is_authenticated %}
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                  {{ user.get_full_name|default:user.username }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="/admin/">Admin</a></li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                </ul>
+              </div>
+            {% else %}
+              <a class="btn btn-primary btn-sm" href="{% url 'login' %}">Login</a>
+            {% endif %}
             {% block navbar_right %}{% endblock %}
           </div>
         </div>
@@ -47,6 +78,13 @@
 
     <main class="flex-grow-1">
       <div class="container py-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} mb-3" role="alert">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
         {% block content %}{% endblock %}
       </div>
     </main>

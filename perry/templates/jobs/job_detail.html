@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Job #{{ job.pk }} · Perry CRM{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+    <div>
+      <h1 class="h3 mb-1">Job #{{ job.pk }}</h1>
+      <div class="text-muted">
+        <a href="{% url 'customer_detail' job.customer.pk %}">{{ job.customer }}</a>
+        · {{ job.get_job_type_display }}
+      </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-secondary" href="{% url 'job_list' %}">Back to jobs</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header bg-white fw-semibold">Details</div>
+        <div class="card-body">
+          <div class="mb-2"><span class="text-muted">Status:</span> {{ job.get_status_display }}</div>
+          <div class="mb-2"><span class="text-muted">Cleaner:</span> {{ job.assigned_cleaner|default:"—" }}</div>
+          <div class="mb-2"><span class="text-muted">Created by:</span> {{ job.created_by }}</div>
+          <div class="mb-2"><span class="text-muted">Estimated time:</span> {{ job.estimated_time }} min</div>
+          <div class="mb-2"><span class="text-muted">Price:</span> ${{ job.price }}</div>
+          <hr />
+          <div class="text-muted small mb-1">Description</div>
+          <div>{{ job.description|linebreaksbr|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header bg-white fw-semibold">Schedule</div>
+        <div class="card-body">
+          <div class="mb-2"><span class="text-muted">Date:</span> {{ job.scheduled_date|default:"—" }}</div>
+          <div class="mb-2"><span class="text-muted">Start:</span> {{ job.scheduled_start_time|default:"—" }}</div>
+          <div class="mb-2"><span class="text-muted">End:</span> {{ job.scheduled_end_time|default:"—" }}</div>
+          <div class="mb-2"><span class="text-muted">Completed:</span> {{ job.completion_date|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

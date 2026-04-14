@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule · Perry CRM{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+    <div>
+      <h1 class="h3 mb-1">Schedule</h1>
+      <div class="text-muted">Upcoming time blocks</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Start</th>
+            <th>End</th>
+            <th>Customer</th>
+            <th>Job</th>
+            <th>Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in blocks %}
+            <tr>
+              <td>{{ b.start_time }}</td>
+              <td>{{ b.end_time }}</td>
+              <td>{{ b.job.customer }}</td>
+              <td><a href="{% url 'job_detail' b.job.pk %}">#{{ b.job.pk }}</a></td>
+              <td>{{ b.assigned_user }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-muted py-3">No scheduled blocks yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
