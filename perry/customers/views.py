@@ -22,10 +22,13 @@ def customer_create(request):
         form = CustomerForm(request.POST)
         if form.is_valid():
             customer = form.save()
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
             return redirect("customer_detail", pk=customer.pk)
     else:
         form = CustomerForm()
-    return render(request, "customers/customer_form.html", {"form": form})
+    return render(request, "customers/customer_form.html", {"form": form, "next": request.GET.get('next')})
 
 
 @login_required

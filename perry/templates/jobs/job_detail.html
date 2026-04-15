@@ -15,6 +15,9 @@
       {% if job.customer.address %}
         <a class="btn btn-primary" href="{% url 'add_customer_to_map' job.pk %}">Add to Map</a>
       {% endif %}
+      {% if not job.invoice %}
+        <a class="btn btn-success" href="{% url 'invoice_create' %}?job={{ job.pk }}">Create Invoice</a>
+      {% endif %}
       <a class="btn btn-outline-secondary" href="{% url 'job_list' %}">Back to jobs</a>
     </div>
   </div>

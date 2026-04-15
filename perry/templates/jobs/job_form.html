@@ -19,6 +19,9 @@
           <div class="col-md-6">
             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
+            {% if field.name == 'customer' %}
+              <div class="form-text"><a href="{% url 'customer_create' %}?next={% url 'job_create' %}">Create new customer</a></div>
+            {% endif %}
             {% for error in field.errors %}
               <div class="text-danger small">{{ error }}</div>
             {% endfor %}

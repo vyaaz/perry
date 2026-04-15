@@ -8,6 +8,7 @@ class HouseStatus(models.TextChoices):
     REJECTED = "REJECTED", "Rejected"
     NON_DM = "NON_DM", "Non DM"
     COME_BACK = "COME_BACK", "Come Back"
+    LEAD = "LEAD", "Lead"
 
 
 class House(models.Model):

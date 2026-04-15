@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}New customer · Perry CRM{% endblock %}
+{% block title %}New invoice · Perry CRM{% endblock %}
 
 {% block content %}
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
-      <h1 class="h3 mb-1">New customer</h1>
-      <div class="text-muted">Add a customer to the CRM</div>
+      <h1 class="h3 mb-1">New invoice</h1>
+      <div class="text-muted">Create an invoice for a completed job</div>
     </div>
   </div>
 
@@ -14,17 +14,11 @@
     <div class="card-body">
       <form method="post" class="row g-3">
         {% csrf_token %}
-        {% if next %}
-          <input type="hidden" name="next" value="{{ next }}">
-        {% endif %}
 
         {% for field in form %}
           <div class="col-md-6">
             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
-            {% if field.help_text %}
-              <div class="form-text">{{ field.help_text }}</div>
-            {% endif %}
             {% for error in field.errors %}
               <div class="text-danger small">{{ error }}</div>
             {% endfor %}
@@ -32,11 +26,10 @@
         {% endfor %}
 
         <div class="col-12">
-          <button class="btn btn-primary" type="submit">Create customer</button>
-          <a class="btn btn-outline-secondary" href="{% url 'customer_list' %}">Cancel</a>
+          <button class="btn btn-primary" type="submit">Create invoice</button>
+          <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Cancel</a>
         </div>
       </form>
     </div>
   </div>
 {% endblock %}
-
