@@ -7,4 +7,15 @@ from .models import House
 @login_required
 def map_view(request):
     houses = House.objects.all()[:500]
-    return render(request, "geolocation/map.html", {"houses": houses})
+    houses_data = [
+        {
+            "id": house.id,
+            "address": house.address,
+            "latitude": float(house.latitude),
+            "longitude": float(house.longitude),
+            "status": house.status,
+            "status_display": house.get_status_display(),
+        }
+        for house in houses
+    ]
+    return render(request, "geolocation/map.html", {"houses": houses_data})

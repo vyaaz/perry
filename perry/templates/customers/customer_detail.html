@@ -11,6 +11,9 @@
       </div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+      {% if customer.address %}
+        <a class="btn btn-success" href="{% url 'add_customer_to_map' customer.pk %}">Add to Map</a>
+      {% endif %}
       <a class="btn btn-primary" href="{% url 'job_create' %}">New job</a>
     </div>
   </div>

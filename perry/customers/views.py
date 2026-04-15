@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 
 from accounts.permissions import role_required
 from invoices.models import Invoice
@@ -37,3 +38,34 @@ def customer_detail(request, pk: int):
         "customers/customer_detail.html",
         {"customer": customer, "jobs": jobs, "invoices": invoices},
     )
+
+
+@login_required
+def add_customer_to_map(request, pk: int):
+    customer = get_object_or_404(Customer, pk=pk)
+
+    # Check if house already exists for this address
+    from geolocation.models import House
+    if House.objects.filter(address=customer.address).exists():
+        messages.warning(request, f"A house with address '{customer.address}' already exists on the map.")
+        return redirect("customer_detail", pk=pk)
+
+    # Geocode the address
+    from geolocation.utils import geocode_address
+    full_address = f"{customer.address}, {customer.city}, {customer.state} {customer.zip_code}".strip(", ")
+    lat, lng = geocode_address(full_address)
+
+    if lat is None or lng is None:
+        messages.error(request, f"Could not geocode address: {full_address}")
+        return redirect("customer_detail", pk=pk)
+
+    # Create the house
+    house = House.objects.create(
+        address=customer.address,
+        latitude=lat,
+        longitude=lng,
+        status='NO_ANSWER',  # Default status
+        created_by=request.user,
+    )
+    messages.success(request, f"Added {customer.address} to the map.")
+    return redirect("customer_detail", pk=pk)

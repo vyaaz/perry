@@ -38,12 +38,39 @@
   {{ houses|json_script:"houses-data" }}
   <script>
     const map = L.map("map").setView([39.5, -98.35], 4); // US center default
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
+      attribution: "Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom",
     }).addTo(map);
 
-    // TODO: In next step, we’ll pass marker data, color by status, and add click-to-add.
+    const housesData = JSON.parse(document.getElementById('houses-data').textContent);
+
+    // Color mapping for house statuses
+    const statusColors = {
+      'SOLD': 'green',
+      'NO_ANSWER': 'gray',
+      'REJECTED': 'red',
+      'NON_DM': 'blue',
+      'COME_BACK': 'orange'
+    };
+
+    // Add markers for each house
+    housesData.forEach(house => {
+      const color = statusColors[house.status] || 'gray';
+      const marker = L.circleMarker([house.latitude, house.longitude], {
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.8,
+        radius: 8
+      }).addTo(map);
+      marker.bindPopup(`<b>${house.address}</b><br>${house.status_display}`);
+    });
+
+    // Adjust map view to fit all markers if there are any
+    if (housesData.length > 0) {
+      const group = new L.featureGroup(housesData.map(h => L.marker([h.latitude, h.longitude])));
+      map.fitBounds(group.getBounds().pad(0.1));
+    }
   </script>
 {% endblock %}
 
