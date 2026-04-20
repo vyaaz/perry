@@ -11,6 +11,7 @@
     <div class="d-flex gap-2 flex-wrap">
       {% if user.role != "CLEANER" %}
         <a class="btn btn-primary" href="{% url 'job_create' %}">New job</a>
+        <a class="btn btn-secondary" href="{% url 'job_import' %}">Import jobs</a>
       {% endif %}
     </div>
   </div>

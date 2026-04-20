@@ -8,6 +8,11 @@
       <h1 class="h3 mb-1">Invoices</h1>
       <div class="text-muted">Paid/unpaid tracking</div>
     </div>
+    <div class="btn-group" role="group" aria-label="Invoice filter">
+      <a href="?status=all" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+      <a href="?status=paid" class="btn btn-sm {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline-primary{% endif %}">Paid</a>
+      <a href="?status=unpaid" class="btn btn-sm {% if status_filter == 'unpaid' %}btn-primary{% else %}btn-outline-primary{% endif %}">Unpaid</a>
+    </div>
   </div>
 
   <div class="card">
@@ -21,6 +26,7 @@
             <th>Status</th>
             <th class="text-end">Amount</th>
             <th>Created</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -38,9 +44,14 @@
               </td>
               <td class="text-end">${{ inv.amount }}</td>
               <td>{{ inv.created_at|date:"Y-m-d" }}</td>
+              <td>
+                <a href="{% url 'invoice_toggle_paid' inv.pk %}" class="btn btn-sm {% if inv.paid %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                  {% if inv.paid %}Mark Unpaid{% else %}Mark Paid{% endif %}
+                </a>
+              </td>
             </tr>
           {% empty %}
-            <tr><td colspan="6" class="text-muted py-3">No invoices yet.</td></tr>
+            <tr><td colspan="7" class="text-muted py-3">No invoices yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

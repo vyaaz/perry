@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from .models import User, CommissionBracket
 
 
 @admin.register(User)
@@ -24,3 +24,12 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ("CRM Fields", {"fields": ("phone_number", "role", "commission_tier", "hire_date")}),
     )
+
+
+@admin.register(CommissionBracket)
+class CommissionBracketAdmin(admin.ModelAdmin):
+    list_display = ("user", "role", "job", "sale", "commission_percentage", "commission_amount", "created_at")
+    list_filter = ("role", "created_at")
+    search_fields = ("user__username", "user__first_name", "user__last_name")
+    autocomplete_fields = ("user", "job", "sale")
+

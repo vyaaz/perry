@@ -2,41 +2,155 @@
 
 {% block title %}Schedule · Perry CRM{% endblock %}
 
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+  <style>
+    #calendar { height: 75vh; }
+    .sales-bank { max-height: 75vh; overflow: auto; }
+    .sale-card { cursor: grab; }
+    .sale-card:active { cursor: grabbing; }
+  </style>
+{% endblock %}
+
 {% block content %}
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
-      <h1 class="h3 mb-1">Schedule</h1>
-      <div class="text-muted">Upcoming time blocks</div>
+      <h1 class="h3 mb-1">Calendar</h1>
+      <div class="text-muted">Drag a sale from the bank onto a 2-hour slot to schedule it as a job.</div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table mb-0 align-middle">
-        <thead>
-          <tr>
-            <th>Start</th>
-            <th>End</th>
-            <th>Customer</th>
-            <th>Job</th>
-            <th>Assigned</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in blocks %}
-            <tr>
-              <td>{{ b.start_time }}</td>
-              <td>{{ b.end_time }}</td>
-              <td>{{ b.job.customer }}</td>
-              <td><a href="{% url 'job_detail' b.job.pk %}">#{{ b.job.pk }}</a></td>
-              <td>{{ b.assigned_user }}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="5" class="text-muted py-3">No scheduled blocks yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div class="row g-3">
+    <div class="col-lg-9">
+      <div class="card">
+        <div class="card-body">
+          <div id="calendar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3">
+      <div class="card">
+        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+          <span>Sales bank</span>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'house_interaction_create' %}">New</a>
+        </div>
+        <div class="card-body p-2 sales-bank">
+          <div id="sales-bank" class="d-grid gap-2"></div>
+        </div>
+        <div class="card-footer small text-muted">
+          Sorted by recency. Drag to schedule.
+        </div>
+      </div>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script>
+    (function () {
+      const bankEl = document.getElementById("sales-bank");
+      const calendarEl = document.getElementById("calendar");
+      if (!bankEl || !calendarEl) return;
+
+      function fmtSaleLabel(s) {
+        const house = s.house_address ? ` · ${s.house_address}` : "";
+        const who = s.customer ? ` (${s.customer})` : "";
+        return `${s.status}${who}${house}`;
+      }
+
+      async function loadSalesBank() {
+        const res = await fetch("{% url 'api_sales_bank' %}", { headers: { "Accept": "application/json" }});
+        const data = await res.json();
+        const sales = data.sales || [];
+        bankEl.innerHTML = "";
+        sales.forEach((s) => {
+          const div = document.createElement("div");
+          div.className = "sale-card border rounded p-2 bg-white";
+          div.dataset.saleId = s.id;
+          div.dataset.saleUrl = s.url;
+          div.dataset.title = fmtSaleLabel(s);
+          div.innerHTML = `
+            <div class="fw-semibold small">${fmtSaleLabel(s)}</div>
+            <div class="text-muted small">Dropped → converts to job</div>
+          `;
+          bankEl.appendChild(div);
+        });
+
+        new FullCalendar.Draggable(bankEl, {
+          itemSelector: ".sale-card",
+          eventData: function (el) {
+            return {
+              title: el.dataset.title || "Sale",
+              duration: "02:00:00",
+              extendedProps: {
+                saleId: el.dataset.saleId,
+                saleUrl: el.dataset.saleUrl,
+              }
+            };
+          }
+        });
+      }
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "timeGridWeek",
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+        navLinks: true,
+        nowIndicator: true,
+        allDaySlot: false,
+        slotMinTime: "07:00:00",
+        slotMaxTime: "21:00:00",
+        slotDuration: "02:00:00",
+        snapDuration: "00:30:00",
+        editable: true,
+        droppable: true,
+        eventDurationEditable: false,
+        eventSources: [
+          { url: "{% url 'api_jobs' %}" }
+        ],
+        eventReceive: function(info) {
+          // Sale dropped onto calendar -> redirect to convert-to-job prompt with prefilled times.
+          const saleUrl = info.event.extendedProps.saleUrl;
+          if (!saleUrl) return;
+          const start = info.event.start;
+          const end = info.event.end;
+          const date = start.toISOString().slice(0,10);
+          const startTime = start.toTimeString().slice(0,5);
+          const endTime = end.toTimeString().slice(0,5);
+          const url = new URL(saleUrl, window.location.origin);
+          url.searchParams.set("date", date);
+          url.searchParams.set("start", startTime);
+          url.searchParams.set("end", endTime);
+          window.location.href = url.toString();
+        },
+        eventDrop: async function(info) {
+          const payload = { start: info.event.start.toISOString(), end: info.event.end.toISOString() };
+          const res = await fetch("{% url 'api_job_move' 0 %}".replace("/0/", `/${info.event.id}/`), {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            info.revert();
+          }
+        }
+      });
+
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      calendar.render();
+      loadSalesBank();
+    })();
+  </script>
 {% endblock %}
 

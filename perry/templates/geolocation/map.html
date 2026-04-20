@@ -18,7 +18,7 @@
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
       <h1 class="h3 mb-1">Map</h1>
-      <div class="text-muted">House markers (read-only for now)</div>
+      <div class="text-muted">Click the map to add a house, or open Sales to log an interaction.</div>
     </div>
   </div>
 
@@ -64,7 +64,11 @@
         fillOpacity: 0.8,
         radius: 8
       }).addTo(map);
-      marker.bindPopup(`<b>${house.address}</b><br>${house.status_display}`);
+      const logUrl = "{% url 'sale_create_for_house' 0 %}".replace("/0/", `/${house.id}/`);
+      marker.bindPopup(
+        `<b>${house.address}</b><br>${house.status_display}<br>` +
+        `<a href="${logUrl}">Log interaction</a>`
+      );
     });
 
     // Adjust map view to fit all markers if there are any
@@ -72,6 +76,16 @@
       const group = new L.featureGroup(housesData.map(h => L.marker([h.latitude, h.longitude])));
       map.fitBounds(group.getBounds().pad(0.1));
     }
+
+    // Click-to-create house: redirects to prefilled form with lat/lng
+    map.on('click', (e) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      const url = new URL("{% url 'house_create' %}", window.location.origin);
+      url.searchParams.set("lat", lat.toFixed(6));
+      url.searchParams.set("lng", lng.toFixed(6));
+      window.location.href = url.toString();
+    });
   </script>
 {% endblock %}
 

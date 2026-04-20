@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Interactions - Perry{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Sales & Interactions</h2>
+  <a href="{% url 'sale_create' %}" class="btn btn-primary">Log New Interaction</a>
+</div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {% if not status %}active{% endif %}" href="?">All</a>
+  </li>
+  {% for key, label in status_choices %}
+    <li class="nav-item">
+      <a class="nav-link {% if status == key %}active{% endif %}" href="?status={{ key }}">{{ label }}</a>
+    </li>
+  {% endfor %}
+</ul>
+
+{% if sales %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>House Address</th>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Open Day</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+          <tr>
+            <td>{{ sale.created_at|date:"M d, Y" }}</td>
+            <td>
+              <strong>{{ sale.house.address }}</strong>
+            </td>
+            <td>
+              {% if sale.customer %}
+                <a href="{% url 'customer_detail' sale.customer.id %}">{{ sale.customer }}</a>
+              {% else %}
+                <span class="text-muted">Not created yet</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge bg-{% if sale.status == 'SOLD' %}success{% elif sale.status == 'LEAD' or sale.status == 'COME_BACK' %}warning{% elif sale.status == 'REJECTED' or sale.status == 'NO_ANSWER' %}secondary{% elif sale.status == 'NON_DM' %}danger{% endif %}">
+                {{ sale.get_status_display }}
+              </span>
+            </td>
+            <td>
+              {% if sale.open_day %}
+                {{ sale.open_day|date:"M d, Y H:i" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                {% if sale.status == 'SOLD' or sale.status == 'LEAD' %}
+                  <a href="{% url 'sale_to_job' sale.id %}" class="btn btn-outline-success" title="Convert to Job">
+                    <i class="bi bi-arrow-right"></i> Job
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info" role="alert">
+    <strong>No interactions yet!</strong> Start logging house interactions by clicking "Log New Interaction".
+  </div>
+{% endif %}
+{% endblock %}

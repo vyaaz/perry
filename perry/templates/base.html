@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -12,12 +13,26 @@
       crossorigin="anonymous"
     />
 
+    <style>
+      /* Make primary Sales action stand out for employees */
+      .dropdown-menu .dropdown-item.sales-primary {
+        font-weight: 600;
+      }
+      .dropdown-menu .dropdown-item.sales-primary:hover,
+      .dropdown-menu .dropdown-item.sales-primary:focus {
+        background-color: #0d6efd; /* bootstrap primary */
+        color: #fff;
+      }
+    </style>
+
     {% block extra_head %}{% endblock %}
   </head>
   <body class="d-flex flex-column min-vh-100 bg-light">
     <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
       <div class="container-fluid px-3">
-        <a class="navbar-brand fw-semibold" href="{% url 'dashboard' %}">Perry CRM</a>
+        <a class="navbar-brand" href="{% url 'dashboard' %}">
+          <img src="{% static 'images/PerryLogoOfficial.svg' %}" alt="Perry" height="50" class="d-inline-block align-text-top me-2" />
+        </a>
         <button
           class="navbar-toggler"
           type="button"
@@ -47,9 +62,28 @@
             <li class="nav-item">
               <a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'sales_list' %}">Sales</a>
-            </li>
+            {% if user.is_authenticated %}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Sales
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a class="dropdown-item sales-primary" href="{% url 'house_interaction_create' %}">
+                      Log house interaction (recommended)
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'sale_create' %}">
+                      Log interaction for existing house
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li><a class="dropdown-item" href="{% url 'house_create' %}">New house</a></li>
+                  <li><a class="dropdown-item" href="{% url 'sale_list' %}">Interactions</a></li>
+                </ul>
+              </li>
+            {% endif %}
             <li class="nav-item">
               <a class="nav-link" href="{% url 'map' %}">Map</a>
             </li>
@@ -68,6 +102,7 @@
                 </ul>
               </div>
             {% else %}
+              <a class="btn btn-outline-secondary btn-sm" href="{% url 'register' %}">Sign Up</a>
               <a class="btn btn-primary btn-sm" href="{% url 'login' %}">Login</a>
             {% endif %}
             {% block navbar_right %}{% endblock %}

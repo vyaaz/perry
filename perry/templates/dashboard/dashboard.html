@@ -1,114 +1,317 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard · Perry CRM{% endblock %}
+{% block title %}Dashboard - Perry{% endblock %}
 
 {% block content %}
-  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
-    <div>
-      <h1 class="h3 mb-1">Dashboard</h1>
-      <div class="text-muted">Today’s overview</div>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-outline-secondary" href="{% url 'customer_create' %}">New customer</a>
-      <a class="btn btn-primary" href="{% url 'job_create' %}">New job</a>
-    </div>
-  </div>
-
-  <div class="row g-3 mb-3">
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">Revenue sold this month</div>
-          <div class="h4 mb-0">${{ revenue_sold_this_month }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">Revenue paid this month</div>
-          <div class="h4 mb-0">${{ revenue_paid_this_month }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">Jobs today</div>
-          <div class="h4 mb-0">{{ jobs_today|length }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">Unpaid invoices</div>
-          <div class="h4 mb-0">{{ unpaid_invoices|length }}</div>
-        </div>
+{% if is_manager %}
+<h2 class="mb-4">Manager Dashboard</h2>
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Revenue This Month</h6>
+        <h3 class="card-text">${{ revenue_sold_this_month|floatformat:2 }}</h3>
+        <small class="text-muted">Invoiced</small>
       </div>
     </div>
   </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Paid This Month</h6>
+        <h3 class="card-text">${{ revenue_paid_this_month|floatformat:2 }}</h3>
+        <small class="text-muted">Collected</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Jobs Today</h6>
+        <h3 class="card-text">{{ jobs_today|length }}</h3>
+        <small class="text-muted">Scheduled</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Unpaid Invoices</h6>
+        <h3 class="card-text">{{ unpaid_invoices|length }}</h3>
+        <small class="text-muted">Pending</small>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div class="row g-3">
-    <div class="col-lg-7">
-      <div class="card">
-        <div class="card-header bg-white">
-          <div class="fw-semibold">Jobs today</div>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Top Sellers</h5>
+      </div>
+      <div class="card-body">
+        {% if top_sellers %}
+        <div class="list-group list-group-flush">
+          {% for seller in top_sellers %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ seller.get_full_name }}</span>
+            <span class="badge bg-primary">${{ seller.total_sales|default:0|floatformat:2 }}</span>
+          </div>
+          {% endfor %}
         </div>
+        {% else %}
+        <p class="text-muted">No sales yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Top Cleaners</h5>
+      </div>
+      <div class="card-body">
+        {% if top_cleaners %}
+        <div class="list-group list-group-flush">
+          {% for cleaner in top_cleaners %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ cleaner.get_full_name }}</span>
+            <span class="badge bg-success">{{ cleaner.jobs_completed }} jobs</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No jobs completed yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Unpaid Invoices</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if unpaid_invoices %}
         <div class="table-responsive">
-          <table class="table table-sm mb-0 align-middle">
-            <thead>
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
               <tr>
+                <th>Invoice</th>
                 <th>Customer</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Cleaner</th>
+                <th>Amount</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              {% for job in jobs_today %}
-                <tr>
-                  <td><a href="{% url 'job_detail' job.pk %}">{{ job.customer }}</a></td>
-                  <td>{{ job.get_job_type_display }}</td>
-                  <td>{{ job.get_status_display }}</td>
-                  <td>{{ job.assigned_cleaner|default:"—" }}</td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="4" class="text-muted py-3">No jobs scheduled for today.</td></tr>
+              {% for invoice in unpaid_invoices %}
+              <tr>
+                <td><a href="{% url 'invoice_list' %}">Invoice #{{ invoice.id }}</a></td>
+                <td>{{ invoice.customer }}</td>
+                <td><strong>${{ invoice.amount }}</strong></td>
+                <td>{{ invoice.created_at|date:"M d, Y" }}</td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+        {% else %}
+        <p class="p-3 text-muted mb-0">All invoices are paid!</p>
+        {% endif %}
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="col-lg-5">
-      <div class="card">
-        <div class="card-header bg-white">
-          <div class="fw-semibold">Unpaid invoices</div>
+{% elif is_seller %}
+<h2 class="mb-4">My Dashboard</h2>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center border-primary">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Closing Ratio</h6>
+        <h3 class="card-text text-primary">{{ closing_ratio|floatformat:1 }}%</h3>
+        <small class="text-muted">{{ successful_sales }}/{{ total_interactions }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center border-success">
+      <div class="card-body">
+        <h6 class="card-title text-muted">My Revenue</h6>
+        <h3 class="card-text text-success">${{ my_revenue|floatformat:2 }}</h3>
+        <small class="text-muted">From jobs</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center border-info">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Commission Earned</h6>
+        <h3 class="card-text text-info">${{ my_commission|floatformat:2 }}</h3>
+        <small class="text-muted">Total</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center border-warning">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Interactions</h6>
+        <h3 class="card-text text-warning">{{ total_interactions }}</h3>
+        <small class="text-muted">Houses contacted</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Upcoming Jobs</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if upcoming_jobs %}
+        <div class="list-group list-group-flush">
+          {% for job in upcoming_jobs %}
+          <a href="{% url 'job_detail' job.id %}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+              <strong>{{ job.customer }}</strong>
+              <small>{{ job.scheduled_date|date:"M d" }} at {{ job.scheduled_start_time|time:"H:i" }}</small>
+            </div>
+            <small class="text-muted">{{ job.get_job_type_display }} · ${{ job.price }}</small>
+          </a>
+          {% endfor %}
         </div>
+        {% else %}
+        <p class="p-3 text-muted mb-0">No upcoming jobs scheduled.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Recent Sales</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_sales %}
+        <div class="list-group list-group-flush">
+          {% for sale in recent_sales %}
+          <a href="{% url 'sale_detail' sale.id %}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between align-items-center">
+              <strong>{{ sale.customer }}</strong>
+              <span class="badge bg-{% if sale.status == 'SOLD' %}success{% elif sale.status == 'LEAD' or sale.status == 'COME_BACK' %}warning{% else %}secondary{% endif %}">{{ sale.get_status_display }}</span>
+            </div>
+            <small class="text-muted">{{ sale.created_at|date:"M d, Y" }}</small>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="p-3 text-muted mb-0">No sales yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% elif is_cleaner %}
+<h2 class="mb-4">My Jobs</h2>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Total Assigned</h6>
+        <h3 class="card-text">{{ assigned_jobs.count }}</h3>
+        <small class="text-muted">Jobs</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Completed</h6>
+        <h3 class="card-text">{{ completed_jobs }}</h3>
+        <small class="text-muted">This month</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Commission</h6>
+        <h3 class="card-text">${{ my_commission|floatformat:2 }}</h3>
+        <small class="text-muted">Earned</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="card-title text-muted">Upcoming</h6>
+        <h3 class="card-text">{{ upcoming_jobs|length }}</h3>
+        <small class="text-muted">Scheduled</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">My Upcoming Jobs</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if upcoming_jobs %}
         <div class="table-responsive">
-          <table class="table table-sm mb-0 align-middle">
-            <thead>
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
               <tr>
                 <th>Customer</th>
-                <th class="text-end">Amount</th>
+                <th>Service</th>
+                <th>Scheduled Date</th>
+                <th>Time</th>
+                <th>Price</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {% for inv in unpaid_invoices %}
-                <tr>
-                  <td>{{ inv.customer }}</td>
-                  <td class="text-end">${{ inv.amount }}</td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="2" class="text-muted py-3">No unpaid invoices.</td></tr>
+              {% for job in upcoming_jobs %}
+              <tr>
+                <td>{{ job.customer }}</td>
+                <td>{{ job.get_job_type_display }}</td>
+                <td>{{ job.scheduled_date|date:"M d, Y" }}</td>
+                <td>{{ job.scheduled_start_time|time:"H:i" }} - {{ job.scheduled_end_time|time:"H:i" }}</td>
+                <td>${{ job.price }}</td>
+                <td>
+                  <a href="{% url 'job_detail' job.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                </td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+        {% else %}
+        <p class="p-3 text-muted mb-0">No jobs scheduled yet.</p>
+        {% endif %}
       </div>
     </div>
   </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning" role="alert">
+  <strong>Unknown role.</strong> Please contact an administrator.
+</div>
+{% endif %}
 {% endblock %}
 

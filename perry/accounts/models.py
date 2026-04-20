@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.utils import timezone
 
 
@@ -44,3 +44,46 @@ class User(AbstractUser):
 
     def total_jobs_completed(self):
         return self.assigned_jobs.filter(status="COMPLETED").count()
+
+    def closing_ratio(self):
+        """
+        Calculate closing ratio for sellers based on house interactions (sales).
+        Ratio = number of successful sales / total house interactions
+        """
+        from sales.models import Sale
+        total_interactions = Sale.objects.filter(user=self).count()
+        successful_sales = Sale.objects.filter(user=self, status="SOLD").count()
+        return (successful_sales / total_interactions) if total_interactions > 0 else 0.0
+
+    def individual_revenue(self):
+        """
+        Total revenue this employee has earned through commission.
+        Includes both seller and cleaner roles.
+        """
+        return (
+            self.payments.aggregate(total=Sum("amount")).get("total") or 0
+        )
+
+
+class CommissionBracket(models.Model):
+    """
+    Commission brackets for employees on a per-sale or per-job basis.
+    Managers can assign different commission rates based on various criteria.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="commission_brackets")
+    job = models.ForeignKey("jobs.Job", on_delete=models.CASCADE, related_name="commission_brackets", null=True, blank=True)
+    sale = models.ForeignKey("sales.Sale", on_delete=models.CASCADE, related_name="commission_brackets", null=True, blank=True)
+    
+    commission_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Commission as percentage")
+    commission_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Fixed commission amount")
+    
+    role = models.CharField(max_length=20, choices=[("SELLER", "Seller"), ("CLEANER", "Cleaner")])
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        target = self.job or self.sale
+        return f"{self.user} · {self.role} · {self.commission_percentage}% · {target}"

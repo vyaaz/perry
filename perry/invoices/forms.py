@@ -14,4 +14,8 @@ class InvoiceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show jobs that don't have invoices yet
-        self.fields["job"].queryset = self.fields["job"].queryset.filter(invoice__isnull=True)
+        jobs = self.fields["job"].queryset.filter(invoice__isnull=True)
+        choices = [('', '---------')]
+        for job in jobs:
+            choices.append((job.pk, f"{job} - ${job.price}"))
+        self.fields["job"].choices = choices

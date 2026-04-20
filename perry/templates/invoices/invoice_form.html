@@ -33,3 +33,16 @@
     </div>
   </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('id_job').addEventListener('change', function() {
+    var selectedOption = this.options[this.selectedIndex];
+    var text = selectedOption.text;
+    var priceMatch = text.match(/\$(\d+\.?\d*)/);
+    if (priceMatch) {
+        document.getElementById('id_amount').value = priceMatch[1];
+    }
+});
+</script>
+{% endblock %}
