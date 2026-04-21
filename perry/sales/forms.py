@@ -28,6 +28,7 @@ class SaleForm(forms.ModelForm):
             "house",
             "customer",
             "status",
+            "quote_price",
             "open_day",
             "notes",
         ]
@@ -38,6 +39,12 @@ class SaleForm(forms.ModelForm):
             existing = field.widget.attrs.get("class", "")
             field.widget.attrs["class"] = (existing + " form-control").strip()
         
+        # If editing existing sale, lock house/customer.
+        if self.instance.pk:
+            for key in ("house", "customer"):
+                if key in self.fields:
+                    self.fields[key].disabled = True
+
         # If editing existing sale, populate customer fields
         if self.instance.pk and self.instance.customer:
             self.fields["first_name"].initial = self.instance.customer.first_name
@@ -48,6 +55,14 @@ class SaleForm(forms.ModelForm):
             self.fields["city"].initial = self.instance.customer.city
             self.fields["state"].initial = self.instance.customer.state
             self.fields["zip_code"].initial = self.instance.customer.zip_code
+
+    def clean(self):
+        cleaned = super().clean()
+        status = cleaned.get("status")
+        quote_price = cleaned.get("quote_price")
+        if status == "SOLD" and quote_price in (None, ""):
+            raise forms.ValidationError("Quote price is required when the interaction outcome is SOLD.")
+        return cleaned
     
     def save(self, commit=True):
         sale = super().save(commit=False)
@@ -95,13 +110,10 @@ class SaleJobForm(forms.Form):
     
     customer = forms.ModelChoiceField(
         queryset=Customer.objects.all().order_by("last_name", "first_name"),
-        required=False,
+        required=True,
         label="Customer",
-        help_text="Required to create a job. Select an existing customer or enter a new one below.",
+        help_text="Required to create a job.",
     )
-    customer_first_name = forms.CharField(max_length=80, required=False, label="New customer first name")
-    customer_last_name = forms.CharField(max_length=80, required=False, label="New customer last name")
-    customer_phone = forms.CharField(max_length=30, required=False, label="New customer phone")
 
     job_type = forms.ChoiceField(
         choices=JobType.choices,
@@ -111,7 +123,7 @@ class SaleJobForm(forms.Form):
     scheduled_start_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
     scheduled_end_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
     assigned_cleaner = forms.ModelChoiceField(
-        queryset=User.objects.filter(role="CLEANER"),
+        queryset=User.objects.filter(role__in=["CLEANER", "BOTH"]),
         required=False,
         label="Assign Cleaner",
     )
@@ -127,19 +139,13 @@ class SaleJobForm(forms.Form):
     def clean(self):
         cleaned = super().clean()
         customer = cleaned.get("customer")
-        has_new_name = cleaned.get("customer_first_name") and cleaned.get("customer_last_name")
-        has_new_phone = bool(cleaned.get("customer_phone"))
-        if not customer and not (has_new_name and has_new_phone):
-            raise forms.ValidationError(
-                "Select a customer or enter new customer first/last name and phone."
-            )
+        if not customer:
+            raise forms.ValidationError("Select a customer.")
         return cleaned
 
 
 class HouseInteractionCreateForm(forms.Form):
     address = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
-    latitude = forms.DecimalField(max_digits=9, decimal_places=6, widget=forms.NumberInput(attrs={"class": "form-control", "step": "any"}))
-    longitude = forms.DecimalField(max_digits=9, decimal_places=6, widget=forms.NumberInput(attrs={"class": "form-control", "step": "any"}))
 
     # Optional: if set, we will create a Sale interaction too
     interaction_status = forms.ChoiceField(
@@ -178,6 +184,14 @@ class HouseInteractionCreateForm(forms.Form):
         help_text="If you don’t have a time yet, pick a date and we’ll set it as tentative.",
     )
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}))
+    quote_price = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+        label="Quote price",
+        help_text="Required when SOLD.",
+    )
 
     def clean(self):
         cleaned = super().clean()
@@ -190,13 +204,19 @@ class HouseInteractionCreateForm(forms.Form):
                 raise forms.ValidationError("Customer phone number is required for SOLD.")
             if not (cleaned.get("open_day") or cleaned.get("tentative_date")):
                 raise forms.ValidationError("Provide either a tentative date or an open day/time for SOLD.")
+            if cleaned.get("quote_price") in (None, ""):
+                raise forms.ValidationError("Quote price is required for SOLD.")
         return cleaned
 
     def create_house(self, *, user):
+        from geolocation.utils import geocode_address
+        lat, lng = geocode_address(self.cleaned_data["address"])
+        if lat is None or lng is None:
+            raise forms.ValidationError("Could not locate that address. Try a more specific address.")
         house = House.objects.create(
             address=self.cleaned_data["address"],
-            latitude=self.cleaned_data["latitude"],
-            longitude=self.cleaned_data["longitude"],
+            latitude=lat,
+            longitude=lng,
             status=HouseStatus.NO_ANSWER,
             created_by=user,
         )

@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
+from django.http import JsonResponse
 
 from accounts.permissions import role_required
 from invoices.models import Invoice
 from jobs.models import Job
+from sales.models import Sale
 
 from .forms import CustomerForm
 from .models import Customer
@@ -72,3 +74,19 @@ def add_customer_to_map(request, pk: int):
     )
     messages.success(request, f"Added {customer.address} to the map.")
     return redirect("customer_detail", pk=pk)
+
+
+@login_required
+def customer_quote_price(request, pk: int):
+    """
+    Return the most recent quote_price for this customer (from Sales),
+    used to auto-fill job price fields.
+    """
+    customer = get_object_or_404(Customer, pk=pk)
+    last_sale = (
+        Sale.objects.filter(customer=customer, quote_price__isnull=False)
+        .order_by("-created_at")
+        .first()
+    )
+    quote = last_sale.quote_price if last_sale else None
+    return JsonResponse({"quote_price": str(quote) if quote is not None else None})

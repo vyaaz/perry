@@ -13,6 +13,7 @@ from .utils import parse_job_csv
 @login_required
 def job_list(request):
     qs = Job.objects.select_related("customer", "created_by", "assigned_cleaner")
+    # Pure cleaners should primarily see jobs assigned to them.
     if getattr(request.user, "role", None) == "CLEANER":
         qs = qs.filter(assigned_cleaner=request.user)
     jobs = qs[:200]
@@ -54,6 +55,22 @@ def job_create(request):
 
 
 @login_required
+def job_edit(request, pk: int):
+    job = get_object_or_404(Job.objects.select_related("created_by"), pk=pk)
+
+    if request.method == "POST":
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Job updated.")
+            return redirect("job_detail", pk=job.pk)
+    else:
+        form = JobForm(instance=job)
+
+    return render(request, "jobs/job_form.html", {"form": form, "job": job, "is_edit": True})
+
+
+@login_required
 def job_detail(request, pk: int):
     job = get_object_or_404(Job.objects.select_related("customer", "created_by", "assigned_cleaner"), pk=pk)
     assigned_cleaners = job.cleaners.select_related("cleaner").all()
@@ -65,7 +82,7 @@ def job_assign_cleaner(request, pk: int):
     job = get_object_or_404(Job.objects.select_related("customer"), pk=pk)
 
     # Cleaners can only assign themselves; managers can assign anyone.
-    if getattr(request.user, "role", None) not in {"MANAGER", "CLEANER"}:
+    if getattr(request.user, "role", None) not in {"MANAGER", "CLEANER", "BOTH"}:
         messages.error(request, "You don't have permission to assign cleaners.")
         return redirect("job_detail", pk=pk)
 
@@ -73,6 +90,10 @@ def job_assign_cleaner(request, pk: int):
         form = JobAssignCleanerForm(request.POST, request_user=request.user)
         if form.is_valid():
             cleaner = form.cleaned_data["cleaner"]
+            role = getattr(request.user, "role", None)
+            if role in {"CLEANER", "BOTH"} and cleaner.pk != request.user.pk:
+                messages.error(request, "Cleaners can only assign themselves.")
+                return redirect("job_assign_cleaner", pk=pk)
             JobCleaner.objects.get_or_create(job=job, cleaner=cleaner)
             # Keep single assigned_cleaner in sync with last assignment.
             job.assigned_cleaner = cleaner

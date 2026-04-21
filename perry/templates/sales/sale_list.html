@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Sales Interactions - Perry{% endblock %}
+{% block title %}Houses - Perry{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Sales & Interactions</h2>
-  <a href="{% url 'sale_create' %}" class="btn btn-primary">Log New Interaction</a>
+  <h2>Houses</h2>
+  <a href="{% url 'house_interaction_create' %}" class="btn btn-primary">Log House Interaction</a>
 </div>
 
 <!-- Filter Tabs -->
@@ -64,6 +64,9 @@
                 <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-primary" title="View">
                   <i class="bi bi-eye"></i> View
                 </a>
+                <a href="{% url 'sale_edit' sale.id %}" class="btn btn-outline-secondary" title="Edit status">
+                  Edit
+                </a>
                 {% if sale.status == 'SOLD' or sale.status == 'LEAD' %}
                   <a href="{% url 'sale_to_job' sale.id %}" class="btn btn-outline-success" title="Convert to Job">
                     <i class="bi bi-arrow-right"></i> Job
@@ -78,7 +81,7 @@
   </div>
 {% else %}
   <div class="alert alert-info" role="alert">
-    <strong>No interactions yet!</strong> Start logging house interactions by clicking "Log New Interaction".
+    <strong>No houses yet!</strong> Start by logging a house interaction.
   </div>
 {% endif %}
 {% endblock %}

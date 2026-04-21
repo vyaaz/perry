@@ -11,7 +11,7 @@
     background: #dee2e6;
     padding: 1px;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: 14px;
     overflow: hidden;
   }
 
@@ -46,6 +46,15 @@
     margin-bottom: 5px;
   }
 
+  .calendar-day-number a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .calendar-day-number a:hover {
+    text-decoration: underline;
+  }
+
   .calendar-job {
     background: #e7f3ff;
     border-left: 3px solid #0d6efd;
@@ -68,6 +77,13 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+  }
+
+  .calendar-job {
+    border-radius: 999px;
+    padding: 4px 10px;
+    border-left: 0;
+    box-shadow: 0 8px 18px rgba(13, 110, 253, 0.10);
   }
 </style>
 {% endblock %}

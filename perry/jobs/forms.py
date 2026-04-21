@@ -35,14 +35,14 @@ class JobImportForm(forms.Form):
 
 class JobAssignCleanerForm(forms.Form):
     cleaner = forms.ModelChoiceField(
-        queryset=User.objects.filter(role="CLEANER").order_by("last_name", "first_name"),
+        queryset=User.objects.filter(role__in=["CLEANER", "BOTH"]).order_by("last_name", "first_name"),
         required=True,
         label="Cleaner",
     )
 
     def __init__(self, *args, request_user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if request_user is not None and getattr(request_user, "role", None) == "CLEANER":
+        if request_user is not None and getattr(request_user, "role", None) in {"CLEANER", "BOTH"}:
             self.fields["cleaner"].queryset = User.objects.filter(pk=request_user.pk)
         for field in self.fields.values():
             existing = field.widget.attrs.get("class", "")

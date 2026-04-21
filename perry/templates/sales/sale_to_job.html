@@ -34,30 +34,6 @@
             <small class="text-muted d-block mt-1">{{ form.customer.help_text }}</small>
           </div>
 
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <label for="{{ form.customer_first_name.id_for_label }}" class="form-label">New customer first name</label>
-              {{ form.customer_first_name }}
-              {% if form.customer_first_name.errors %}
-                <div class="text-danger small mt-1">{{ form.customer_first_name.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="{{ form.customer_last_name.id_for_label }}" class="form-label">New customer last name</label>
-              {{ form.customer_last_name }}
-              {% if form.customer_last_name.errors %}
-                <div class="text-danger small mt-1">{{ form.customer_last_name.errors }}</div>
-              {% endif %}
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="{{ form.customer_phone.id_for_label }}" class="form-label">New customer phone</label>
-              {{ form.customer_phone }}
-              {% if form.customer_phone.errors %}
-                <div class="text-danger small mt-1">{{ form.customer_phone.errors }}</div>
-              {% endif %}
-            </div>
-          </div>
-
           <div class="mb-3">
             <label for="{{ form.job_type.id_for_label }}" class="form-label">Service Type</label>
             {{ form.job_type }}
@@ -158,4 +134,31 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+  <script>
+    (function () {
+      const customerEl = document.getElementById("{{ form.customer.id_for_label }}");
+      const priceEl = document.getElementById("{{ form.price.id_for_label }}");
+      if (!customerEl || !priceEl) return;
+
+      async function refreshQuote() {
+        const customerId = customerEl.value;
+        if (!customerId) return;
+        try {
+          const res = await fetch(`/customers/${customerId}/quote-price/`, { headers: { "Accept": "application/json" } });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.quote_price != null && priceEl.value === "") {
+            priceEl.value = data.quote_price;
+          }
+        } catch (e) {}
+      }
+
+      customerEl.addEventListener("change", refreshQuote);
+      refreshQuote();
+    })();
+  </script>
 {% endblock %}

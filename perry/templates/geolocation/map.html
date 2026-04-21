@@ -18,7 +18,7 @@
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
       <h1 class="h3 mb-1">Map</h1>
-      <div class="text-muted">Click the map to add a house, or open Sales to log an interaction.</div>
+      <div class="text-muted">Use the Sales menu to log a house interaction.</div>
     </div>
   </div>
 
@@ -64,10 +64,12 @@
         fillOpacity: 0.8,
         radius: 8
       }).addTo(map);
-      const logUrl = "{% url 'sale_create_for_house' 0 %}".replace("/0/", `/${house.id}/`);
+      const editUrl = "{% url 'house_edit' 0 %}".replace("/0/", `/${house.id}/`);
       marker.bindPopup(
         `<b>${house.address}</b><br>${house.status_display}<br>` +
-        `<a href="${logUrl}">Log interaction</a>`
+        `<div class="d-flex gap-2 mt-2">` +
+          `<a class="btn btn-sm btn-primary" href="${editUrl}">Edit</a>` +
+        `</div>`
       );
     });
 
@@ -77,15 +79,7 @@
       map.fitBounds(group.getBounds().pad(0.1));
     }
 
-    // Click-to-create house: redirects to prefilled form with lat/lng
-    map.on('click', (e) => {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
-      const url = new URL("{% url 'house_create' %}", window.location.origin);
-      url.searchParams.set("lat", lat.toFixed(6));
-      url.searchParams.set("lng", lng.toFixed(6));
-      window.location.href = url.toString();
-    });
+    // Click-to-create removed (we log interactions via the Sales flow).
   </script>
 {% endblock %}
 

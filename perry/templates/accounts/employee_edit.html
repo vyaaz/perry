@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee · Perry CRM{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+    <div>
+      <h1 class="h3 mb-1">Edit employee</h1>
+      <div class="text-muted">{{ employee.get_full_name }} · {{ employee.username }}</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'employees_list' %}">Back</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="{{ form.role.id_for_label }}" class="form-label">Role</label>
+              {{ form.role }}
+              {% if form.role.errors %}
+                <div class="text-danger small mt-1">{{ form.role.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.commission_tier.id_for_label }}" class="form-label">Commission bracket</label>
+              {{ form.commission_tier }}
+              <div class="form-text">Amateur = 10%, Intermediate = 15%, Elite = 20%.</div>
+              {% if form.commission_tier.errors %}
+                <div class="text-danger small mt-1">{{ form.commission_tier.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.commission_override_percentage.id_for_label }}" class="form-label">Custom commission % (optional)</label>
+              {{ form.commission_override_percentage }}
+              <div class="form-text">Leave blank to use the bracket.</div>
+              {% if form.commission_override_percentage.errors %}
+                <div class="text-danger small mt-1">{{ form.commission_override_percentage.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a class="btn btn-outline-secondary" href="{% url 'employees_list' %}">Cancel</a>
+              <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header bg-white fw-semibold">Current setting</div>
+        <div class="card-body">
+          <div class="mb-2">
+            <div class="text-muted small">Role</div>
+            <div class="fw-semibold">{{ employee.get_role_display }}</div>
+          </div>
+          <div>
+            <div class="text-muted small">Commission</div>
+            {% if employee.commission_override_percentage %}
+              <div class="fw-semibold">{{ employee.commission_override_percentage }}%</div>
+              <div class="text-muted small">Custom override</div>
+            {% else %}
+              <div class="fw-semibold">{{ employee.get_commission_tier_display }}</div>
+              <div class="text-muted small">
+                {% if employee.commission_tier == "AMATEUR" %}10%
+                {% elif employee.commission_tier == "INTERMEDIATE" %}15%
+                {% elif employee.commission_tier == "ELITE" %}20%
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

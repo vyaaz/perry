@@ -22,7 +22,7 @@ def api_jobs(request):
     """
     FullCalendar events feed for scheduled jobs.
     """
-    qs = Job.objects.select_related("customer").filter(
+    qs = Job.objects.select_related("customer", "assigned_cleaner").filter(
         scheduled_date__isnull=False,
         scheduled_start_time__isnull=False,
         scheduled_end_time__isnull=False,
@@ -39,10 +39,15 @@ def api_jobs(request):
         events.append(
             {
                 "id": str(j.pk),
-                "title": f"{j.customer} · #{j.pk}",
+                # Keep event blocks short: only the customer name (no time/id).
+                "title": str(j.customer) if j.customer else "Job",
                 "start": start.isoformat(),
                 "end": end.isoformat(),
                 "url": f"/jobs/{j.pk}/",
+                "extendedProps": {
+                    "hasCleaner": bool(j.assigned_cleaner_id),
+                    "cleanerName": j.assigned_cleaner.get_full_name() if j.assigned_cleaner_id else "",
+                },
             }
         )
     return JsonResponse(events, safe=False)

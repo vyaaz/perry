@@ -8,6 +8,7 @@ class UserRole(models.TextChoices):
     MANAGER = "MANAGER", "Manager"
     SELLER = "SELLER", "Seller"
     CLEANER = "CLEANER", "Cleaner"
+    BOTH = "BOTH", "Seller + Cleaner"
 
 
 class CommissionTier(models.TextChoices):
@@ -20,9 +21,17 @@ class User(AbstractUser):
     email = models.EmailField(blank=True)
     phone_number = models.CharField(max_length=30, blank=True)
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.SELLER)
+    profile_image = models.ImageField(upload_to="profile_pics/", null=True, blank=True)
 
     commission_tier = models.CharField(
         max_length=20, choices=CommissionTier.choices, default=CommissionTier.AMATEUR
+    )
+    commission_override_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="If set, overrides the tier percentage (e.g. 12.5 for 12.5%).",
     )
     hire_date = models.DateField(null=True, blank=True, default=timezone.now)
 

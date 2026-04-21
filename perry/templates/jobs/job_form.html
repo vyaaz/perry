@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}New job · Perry CRM{% endblock %}
+{% block title %}{% if is_edit %}Edit job · Perry CRM{% else %}New job · Perry CRM{% endif %}{% endblock %}
 
 {% block content %}
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
-      <h1 class="h3 mb-1">New job</h1>
-      <div class="text-muted">Create a job for a customer</div>
+      <h1 class="h3 mb-1">{% if is_edit %}Edit job{% else %}New job{% endif %}</h1>
+      <div class="text-muted">
+        {% if is_edit %}Update job details{% else %}Create a job for a customer{% endif %}
+      </div>
     </div>
   </div>
 
@@ -29,11 +31,37 @@
         {% endfor %}
 
         <div class="col-12">
-          <button class="btn btn-primary" type="submit">Create job</button>
+          <button class="btn btn-primary" type="submit">{% if is_edit %}Save changes{% else %}Create job{% endif %}</button>
           <a class="btn btn-outline-secondary" href="{% url 'job_list' %}">Cancel</a>
         </div>
       </form>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+  <script>
+    (function () {
+      const customerEl = document.getElementById("{{ form.customer.id_for_label }}");
+      const priceEl = document.getElementById("{{ form.price.id_for_label }}");
+      if (!customerEl || !priceEl) return;
+
+      async function refreshQuote() {
+        const customerId = customerEl.value;
+        if (!customerId) return;
+        try {
+          const res = await fetch(`/customers/${customerId}/quote-price/`, { headers: { "Accept": "application/json" } });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.quote_price != null) {
+            priceEl.value = data.quote_price;
+          }
+        } catch (e) {}
+      }
+
+      customerEl.addEventListener("change", refreshQuote);
+    })();
+  </script>
 {% endblock %}
 

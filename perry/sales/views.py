@@ -69,6 +69,24 @@ def sale_create(request, house_id: int = None):
 
 
 @login_required
+def sale_edit(request, pk: int):
+    """Edit an existing house interaction (mainly status/notes/quote)."""
+    sale = get_object_or_404(Sale.objects.select_related("house", "customer"), pk=pk)
+
+    if request.method == "POST":
+        form = SaleForm(request.POST, instance=sale)
+        if form.is_valid():
+            sale = form.save()
+            if sale.house_id:
+                House.objects.filter(pk=sale.house_id).update(status=sale.status)
+            messages.success(request, "House interaction updated.")
+            return redirect("sale_detail", pk=sale.pk)
+    else:
+        form = SaleForm(instance=sale)
+
+    return render(request, "sales/sale_form.html", {"form": form, "house": sale.house})
+
+@login_required
 def sale_detail(request, pk: int):
     """View sale details"""
     sale = get_object_or_404(Sale.objects.select_related("user", "house", "customer"), pk=pk)
@@ -83,16 +101,7 @@ def sale_to_job(request, pk: int):
     if request.method == "POST":
         form = SaleJobForm(request.POST)
         if form.is_valid():
-            customer = form.cleaned_data.get("customer") or sale.customer
-            if not customer:
-                customer = Customer.objects.create(
-                    first_name=(form.cleaned_data.get("customer_first_name") or "").strip(),
-                    last_name=(form.cleaned_data.get("customer_last_name") or "").strip(),
-                    phone=(form.cleaned_data.get("customer_phone") or "").strip(),
-                    address=getattr(sale.house, "address", "") or "",
-                )
-                sale.customer = customer
-                sale.save(update_fields=["customer"])
+            customer = form.cleaned_data["customer"]
 
             job = Job.objects.create(
                 customer=customer,
@@ -110,7 +119,7 @@ def sale_to_job(request, pk: int):
             messages.success(request, f"Job created from sale!")
             return redirect("job_detail", pk=job.pk)
     else:
-        initial = {"customer": sale.customer}
+        initial = {"customer": sale.customer, "price": sale.quote_price}
         # Optional prefill when dropping on calendar
         if request.GET.get("date"):
             initial["scheduled_date"] = request.GET.get("date")
@@ -152,7 +161,9 @@ def api_sales_bank(request):
             "customer": str(sale.customer) if sale.customer else "",
             "house_address": getattr(sale.house, "address", ""),
             "status": sale.get_status_display(),
+            "status_code": sale.status,
             "open_day": sale.open_day.isoformat() if sale.open_day else None,
+            "quote_price": str(sale.quote_price) if getattr(sale, "quote_price", None) is not None else None,
             "created_at": sale.created_at.isoformat(),
             "url": f"/sales/sale/{sale.id}/to-job/",
         }
@@ -170,10 +181,11 @@ def house_interaction_create(request):
     """
     initial = {}
     try:
+        # Kept for backward compatibility with old links, but we no longer ask for lat/lng in the form.
         if request.GET.get("lat"):
-            initial["latitude"] = float(request.GET.get("lat"))
+            float(request.GET.get("lat"))
         if request.GET.get("lng"):
-            initial["longitude"] = float(request.GET.get("lng"))
+            float(request.GET.get("lng"))
     except ValueError:
         pass
     if request.GET.get("address"):
@@ -209,6 +221,7 @@ def house_interaction_create(request):
                     house=house,
                     customer=customer,
                     status=status,
+                    quote_price=form.cleaned_data.get("quote_price"),
                     open_day=open_day,
                     notes=form.cleaned_data.get("notes", ""),
                 )

@@ -46,7 +46,7 @@
         <h5 class="card-title mb-0">Currently Assigned Cleaners</h5>
       </div>
       <div class="card-body">
-        {% if job.cleaners.all %}
+        {% if job.cleaners.all|length %}
           <ul class="list-group">
             {% for cleaner in job.cleaners.all %}
               <li class="list-group-item d-flex justify-content-between align-items-center">

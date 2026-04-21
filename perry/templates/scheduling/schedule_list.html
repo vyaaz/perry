@@ -7,8 +7,57 @@
   <style>
     #calendar { height: 75vh; }
     .sales-bank { max-height: 75vh; overflow: auto; }
-    .sale-card { cursor: grab; }
+    .sale-card { cursor: grab; user-select: none; }
     .sale-card:active { cursor: grabbing; }
+
+    /* FullCalendar polish */
+    .fc { --fc-border-color: #e9ecef; --fc-page-bg-color: transparent; }
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid table { border-radius: 12px; overflow: hidden; }
+    .fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 700; }
+    .fc .fc-button { border-radius: 10px; }
+    .fc .fc-timegrid-slot { height: 2.25rem; } /* prevents stretched-looking late slots */
+    .fc .fc-timegrid-axis-cushion { font-size: .85rem; color: #6c757d; }
+    .fc .fc-col-header-cell-cushion { font-weight: 700; color: #495057; text-decoration: none; }
+    .fc .fc-timegrid-now-indicator-line { border-color: #0d6efd; }
+    .fc .fc-event { border-radius: 10px; border: 1px solid rgba(13,110,253,.20); padding: 2px 8px; box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+    .fc .fc-event-main { font-weight: 600; }
+    .fc .fc-event .cleaner-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+      background: #198754; /* bootstrap success */
+      box-shadow: 0 0 0 2px rgba(25,135,84,.15);
+      vertical-align: middle;
+    }
+
+    /* Uppercase the view + today buttons */
+    .fc .fc-today-button,
+    .fc .fc-dayGridMonth-button,
+    .fc .fc-timeGridWeek-button,
+    .fc .fc-timeGridDay-button {
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    /* Sales bank cards */
+    .sale-card {
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      background: #fff;
+      transition: box-shadow .12s ease, border-color .12s ease;
+    }
+    .sale-card:hover {
+      border-color: rgba(13,110,253,.30);
+      box-shadow: 0 10px 22px rgba(0,0,0,.08);
+    }
+    .sale-title { font-weight: 700; font-size: .9rem; line-height: 1.15; }
+    .sale-subtitle { font-size: .8rem; color: #6c757d; line-height: 1.2; }
+    .sale-meta { font-size: .78rem; color: #6c757d; }
+    .sale-badge { font-size: .72rem; padding: 4px 8px; border-radius: 999px; font-weight: 700; }
+    .sale-price { font-size: .85rem; font-weight: 800; color: #0d6efd; }
   </style>
 {% endblock %}
 
@@ -56,9 +105,9 @@
       if (!bankEl || !calendarEl) return;
 
       function fmtSaleLabel(s) {
-        const house = s.house_address ? ` · ${s.house_address}` : "";
-        const who = s.customer ? ` (${s.customer})` : "";
-        return `${s.status}${who}${house}`;
+        const who = s.customer ? `${s.customer}` : "Unknown customer";
+        const house = s.house_address ? `${s.house_address}` : "";
+        return `${who}${house ? " · " + house : ""}`;
       }
 
       async function loadSalesBank() {
@@ -67,14 +116,33 @@
         const sales = data.sales || [];
         bankEl.innerHTML = "";
         sales.forEach((s) => {
+          const code = (s.status_code || "").toUpperCase();
+          const badge =
+            code === "SOLD" ? "text-bg-success" :
+            (code === "LEAD" || code === "COME_BACK") ? "text-bg-warning" :
+            code === "REJECTED" ? "text-bg-secondary" :
+            code === "NO_ANSWER" ? "text-bg-light" :
+            code === "NON_DM" ? "text-bg-danger" :
+            "text-bg-secondary";
+
+          const money = s.quote_price ? `$${s.quote_price}` : "";
           const div = document.createElement("div");
-          div.className = "sale-card border rounded p-2 bg-white";
+          div.className = "sale-card p-3";
           div.dataset.saleId = s.id;
           div.dataset.saleUrl = s.url;
           div.dataset.title = fmtSaleLabel(s);
           div.innerHTML = `
-            <div class="fw-semibold small">${fmtSaleLabel(s)}</div>
-            <div class="text-muted small">Dropped → converts to job</div>
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div class="flex-grow-1 min-w-0">
+                <div class="sale-title text-truncate">${s.customer || "Unknown customer"}</div>
+                <div class="sale-subtitle text-truncate">${s.house_address || ""}</div>
+              </div>
+              <span class="sale-badge ${badge}">${s.status || "—"}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <div class="sale-meta">Drag → drop onto a 2‑hour slot</div>
+              <div class="sale-price">${money}</div>
+            </div>
           `;
           bankEl.appendChild(div);
         });
@@ -96,6 +164,7 @@
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "timeGridWeek",
+        expandRows: false,
         headerToolbar: {
           left: "prev,next today",
           center: "title",
@@ -104,16 +173,35 @@
         navLinks: true,
         nowIndicator: true,
         allDaySlot: false,
+        displayEventTime: false,
+        displayEventEnd: false,
         slotMinTime: "07:00:00",
         slotMaxTime: "21:00:00",
         slotDuration: "02:00:00",
         snapDuration: "00:30:00",
+        slotLabelFormat: { hour: "numeric", minute: "2-digit", meridiem: "short" },
         editable: true,
         droppable: true,
         eventDurationEditable: false,
         eventSources: [
           { url: "{% url 'api_jobs' %}" }
         ],
+        eventContent: function (arg) {
+          // Force event blocks to show ONLY the title (no time / extra lines).
+          const wrap = document.createElement("div");
+          wrap.className = "fc-event-title";
+
+          const hasCleaner = !!(arg.event.extendedProps && arg.event.extendedProps.hasCleaner);
+          if (hasCleaner) {
+            const dot = document.createElement("span");
+            dot.className = "cleaner-dot";
+            dot.title = "Cleaner assigned";
+            wrap.appendChild(dot);
+          }
+
+          wrap.appendChild(document.createTextNode(arg.event.title || ""));
+          return { domNodes: [wrap] };
+        },
         eventReceive: function(info) {
           // Sale dropped onto calendar -> redirect to convert-to-job prompt with prefilled times.
           const saleUrl = info.event.extendedProps.saleUrl;

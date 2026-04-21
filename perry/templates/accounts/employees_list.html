@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Employees · Perry CRM{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+    <div>
+      <h1 class="h3 mb-1">Employees</h1>
+      <div class="text-muted">View roles and assign commission tiers or custom percentages.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th class="text-muted">Username</th>
+              <th>Role</th>
+              <th>Commission</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in employees %}
+              <tr>
+                <td class="fw-semibold">{{ e.get_full_name }}</td>
+                <td class="text-muted">{{ e.username }}</td>
+                <td>{{ e.get_role_display }}</td>
+                <td>
+                  {% if e.commission_override_percentage %}
+                    <span class="badge text-bg-primary">{{ e.commission_override_percentage }}%</span>
+                    <span class="text-muted small ms-1">(custom)</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">{{ e.get_commission_tier_display }}</span>
+                    {% if e.commission_tier == "AMATEUR" %}
+                      <span class="text-muted small ms-1">10%</span>
+                    {% elif e.commission_tier == "INTERMEDIATE" %}
+                      <span class="text-muted small ms-1">15%</span>
+                    {% elif e.commission_tier == "ELITE" %}
+                      <span class="text-muted small ms-1">20%</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {% if can_edit %}
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'employee_commission_edit' e.id %}">Edit</a>
+                  {% else %}
+                    <span class="text-muted small">View only</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">No employees found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

@@ -4,12 +4,12 @@ import urllib.request
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
 from .models import House
-from .forms import HouseCreateForm
+from .forms import HouseCreateForm, HouseUpdateForm
 
 
 @login_required
@@ -54,6 +54,22 @@ def house_create(request):
         form = HouseCreateForm(initial=initial)
 
     return render(request, "geolocation/house_form.html", {"form": form})
+
+
+@login_required
+def house_edit(request, pk: int):
+    house = get_object_or_404(House, pk=pk)
+
+    if request.method == "POST":
+        form = HouseUpdateForm(request.POST, instance=house)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "House updated.")
+            return redirect("map")
+    else:
+        form = HouseUpdateForm(instance=house)
+
+    return render(request, "geolocation/house_edit.html", {"form": form, "house": house})
 
 
 @login_required

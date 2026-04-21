@@ -21,6 +21,7 @@ class Sale(models.Model):
     customer = models.ForeignKey("customers.Customer", on_delete=models.CASCADE, related_name="sales", null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=SaleStatus.choices, default=SaleStatus.NO_ANSWER)
+    quote_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     # Optional open day/time slot
     open_day = models.DateTimeField(null=True, blank=True, help_text="Scheduled open day if customer agreed")

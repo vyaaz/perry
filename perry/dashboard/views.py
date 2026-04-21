@@ -20,6 +20,7 @@ def dashboard(request):
     is_manager = user.role == "MANAGER"
     is_seller = user.role == "SELLER"
     is_cleaner = user.role == "CLEANER"
+    is_both = user.role == "BOTH"
 
     # Filter context based on user role
     if is_manager:
@@ -40,13 +41,13 @@ def dashboard(request):
         
         # Top performers
         top_sellers = (
-            User.objects.filter(role="SELLER")
+            User.objects.filter(role__in=["SELLER", "BOTH"])
             .annotate(total_sales=Sum("created_jobs__invoice__amount"))
             .order_by("-total_sales")[:5]
         )
         
         top_cleaners = (
-            User.objects.filter(role="CLEANER")
+            User.objects.filter(role__in=["CLEANER", "BOTH"])
             .annotate(jobs_completed=Count("assigned_jobs", filter=Q(assigned_jobs__status="COMPLETED")))
             .order_by("-jobs_completed")[:5]
         )
@@ -61,7 +62,7 @@ def dashboard(request):
             "top_cleaners": top_cleaners,
         }
         
-    elif is_seller:
+    elif is_seller or is_both:
         # Seller dashboard - individual statistics
         my_sales = Sale.objects.filter(user=user)
         my_jobs = Job.objects.filter(created_by=user)

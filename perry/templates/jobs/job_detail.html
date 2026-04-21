@@ -166,6 +166,7 @@
         <h5 class="card-title mb-0">Actions</h5>
       </div>
       <div class="card-body d-grid gap-2">
+        <a href="{% url 'job_edit' job.id %}" class="btn btn-primary">Edit Job</a>
         {% if job.status != 'COMPLETED' %}
           <a href="{% url 'job_mark_complete' job.id %}" class="btn btn-success">Mark Complete</a>
         {% else %}

@@ -14,3 +14,13 @@ class HouseCreateForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-control"}),
         }
 
+
+class HouseUpdateForm(forms.ModelForm):
+    class Meta:
+        model = House
+        fields = ["address", "status"]
+        widgets = {
+            "address": forms.TextInput(attrs={"class": "form-control"}),
+            "status": forms.Select(attrs={"class": "form-control"}),
+        }
+

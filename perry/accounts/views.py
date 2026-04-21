@@ -3,7 +3,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
-from .forms import UserRegistrationForm, UserProfileForm
+from .forms import EmployeeCommissionForm, UserRegistrationForm, UserProfileForm
+from .permissions import role_required
 
 
 def login_view(request):
@@ -49,7 +50,7 @@ def logout_view(request):
 def profile_view(request):
     """User profile page"""
     if request.method == "POST":
-        form = UserProfileForm(request.POST, instance=request.user)
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully!")
@@ -58,4 +59,38 @@ def profile_view(request):
         form = UserProfileForm(instance=request.user)
     
     return render(request, "accounts/profile.html", {"form": form})
+
+
+@login_required
+def employees_list(request):
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    employees = User.objects.all().order_by("role", "last_name", "first_name", "username")
+    can_edit = getattr(request.user, "role", None) == "MANAGER"
+    return render(
+        request,
+        "accounts/employees_list.html",
+        {"employees": employees, "can_edit": can_edit},
+    )
+
+
+@role_required("MANAGER")
+def employee_commission_edit(request, user_id: int):
+    from django.contrib.auth import get_user_model
+    from django.shortcuts import get_object_or_404
+
+    User = get_user_model()
+    employee = get_object_or_404(User, pk=user_id)
+
+    if request.method == "POST":
+        form = EmployeeCommissionForm(request.POST, instance=employee)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Updated {employee.get_full_name()}.")
+            return redirect("employees_list")
+    else:
+        form = EmployeeCommissionForm(instance=employee)
+
+    return render(request, "accounts/employee_edit.html", {"employee": employee, "form": form})
 

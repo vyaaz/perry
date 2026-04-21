@@ -25,9 +25,9 @@
 
   .time-slot {
     border-bottom: 1px solid #dee2e6;
-    min-height: 100px;
-    padding: 10px;
-    background: white;
+    min-height: 72px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
     transition: background 0.2s;
   }
 
@@ -36,18 +36,19 @@
   }
 
   .time-slot.has-job {
-    background: #e7f3ff;
+    background: linear-gradient(180deg, #f2f8ff 0%, #eaf4ff 100%);
   }
 
   .job-block {
     background: #0d6efd;
     color: white;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 5px;
-    font-size: 0.85rem;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
     cursor: pointer;
     text-decoration: none;
+    box-shadow: 0 10px 20px rgba(13, 110, 253, 0.18);
   }
 
   .job-block:hover {
@@ -58,6 +59,10 @@
   .job-block small {
     display: block;
     opacity: 0.9;
+  }
+
+  .slot-title {
+    letter-spacing: .02em;
   }
 </style>
 {% endblock %}
@@ -76,8 +81,9 @@
       <div class="card-body p-0">
         <div class="time-slot-container">
           <div style="flex: 0 0 80px; background: #f8f9fa; border-right: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;"></div>
-          <div style="flex: 1; padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid #dee2e6;">
-            Available Time Slots (2 hours each)
+          <div style="flex: 1; padding: 10px 12px; text-align: center; font-weight: 700; border-bottom: 1px solid #dee2e6;">
+            <span class="slot-title">2‑hour schedule</span>
+            <div class="small text-muted fw-normal">Click a job to view details</div>
           </div>
         </div>
 
@@ -91,7 +97,7 @@
                 {% for job in slot.jobs %}
                   <a href="{% url 'job_detail' job.id %}" class="job-block">
                     <strong>{{ job.customer|truncatechars:20 }}</strong>
-                    <small>{{ job.job_type|default:"Other" }} • ${{ job.price }}</small>
+                    <small>{{ job.get_job_type_display|default:"Other" }} • ${{ job.price }}{% if job.assigned_cleaner %} • {{ job.assigned_cleaner.get_full_name }}{% endif %}</small>
                   </a>
                 {% endfor %}
               {% else %}

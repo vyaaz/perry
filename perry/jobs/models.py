@@ -31,7 +31,7 @@ class Job(models.Model):
         null=True,
         blank=True,
         related_name="assigned_jobs",
-        limit_choices_to={"role": "CLEANER"},
+        limit_choices_to={"role__in": ["CLEANER", "BOTH"]},
     )
 
     job_type = models.CharField(max_length=30, choices=JobType.choices, default=JobType.WINDOW_WASH)
@@ -74,7 +74,7 @@ class JobCleaner(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="jobs_as_cleaner",
-        limit_choices_to={"role": "CLEANER"},
+        limit_choices_to={"role__in": ["CLEANER", "BOTH"]},
     )
     assigned_at = models.DateTimeField(auto_now_add=True)
 

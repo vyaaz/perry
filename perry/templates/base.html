@@ -63,6 +63,11 @@
               <a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a>
             </li>
             {% if user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'employees_list' %}">Employees</a>
+              </li>
+            {% endif %}
+            {% if user.is_authenticated %}
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   Sales
@@ -73,14 +78,7 @@
                       Log house interaction (recommended)
                     </a>
                   </li>
-                  <li>
-                    <a class="dropdown-item" href="{% url 'sale_create' %}">
-                      Log interaction for existing house
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li><a class="dropdown-item" href="{% url 'house_create' %}">New house</a></li>
-                  <li><a class="dropdown-item" href="{% url 'sale_list' %}">Interactions</a></li>
+                  <li><a class="dropdown-item" href="{% url 'sale_list' %}">Houses</a></li>
                 </ul>
               </li>
             {% endif %}
@@ -96,6 +94,7 @@
                   {{ user.get_full_name|default:user.username }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
                   <li><a class="dropdown-item" href="/admin/">Admin</a></li>
                   <li><hr class="dropdown-divider" /></li>
                   <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
